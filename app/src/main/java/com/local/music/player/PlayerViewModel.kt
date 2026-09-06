@@ -16,6 +16,7 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.local.music.model.Track
 import com.local.music.playback.PlaybackService
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -59,6 +60,9 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     var queue by mutableStateOf<List<Track>>(emptyList()); private set
 
     val hasTrack: Boolean get() = currentTrack != null
+
+    var sleepMinutes by mutableStateOf<Int?>(null); private set
+    private var sleepJob: Job? = null
 
     private val listener = object : Player.Listener {
         override fun onIsPlayingChanged(playing: Boolean) { isPlaying = playing }
@@ -126,6 +130,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         if (c.currentPosition > 3000) c.seekTo(0) else c.seekToPreviousMediaItem()
     }
     fun seekTo(ms: Long) { controller?.seekTo(ms) }
+    fun jumpTo(index: Int) { controller?.seekTo(index, 0L) }
     fun toggleShuffle() { controller?.let { it.shuffleModeEnabled = !it.shuffleModeEnabled } }
     fun cycleRepeat() {
         val c = controller ?: return
@@ -134,6 +139,22 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
             Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
             else -> Player.REPEAT_MODE_OFF
         }
+    }
+
+    fun startSleep(minutes: Int) {
+        sleepJob?.cancel()
+        sleepMinutes = minutes
+        sleepJob = viewModelScope.launch {
+            delay(minutes * 60_000L)
+            controller?.pause()
+            sleepMinutes = null
+        }
+    }
+
+    fun cancelSleep() {
+        sleepJob?.cancel()
+        sleepJob = null
+        sleepMinutes = null
     }
 
     override fun onCleared() {

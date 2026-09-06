@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 
@@ -24,6 +25,15 @@ class PlaybackService : MediaSessionService() {
             )
             .setHandleAudioBecomingNoisy(true)   // pause when headphones unplug
             .build()
+
+        // Bind the equalizer / loudness to the player's audio session.
+        AudioEffects.attach(this, player.audioSessionId)
+        player.addAnalyticsListener(object : AnalyticsListener {
+            override fun onAudioSessionIdChanged(eventTime: AnalyticsListener.EventTime, audioSessionId: Int) {
+                AudioEffects.attach(this@PlaybackService, audioSessionId)
+            }
+        })
+
         mediaSession = MediaSession.Builder(this, player).build()
     }
 
