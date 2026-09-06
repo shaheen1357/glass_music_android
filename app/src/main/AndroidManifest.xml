@@ -31,5 +31,15 @@
             </intent-filter>
         </activity>
 
+        <!-- Media3 playback service: typed foreground service (required on API 34+) -->
+        <service
+            android:name=".playback.PlaybackService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+            </intent-filter>
+        </service>
+
     </application>
 </manifest>

@@ -35,6 +35,9 @@ android {
     }
     kotlinOptions {
         jvmTarget = "17"
+        // Media3's ExoPlayer.* APIs are @UnstableApi (@RequiresOptIn = ERROR).
+        // Opt in module-wide so we don't annotate every file.
+        freeCompilerArgs += "-opt-in=androidx.media3.common.util.UnstableApi"
     }
     buildFeatures {
         compose = true
