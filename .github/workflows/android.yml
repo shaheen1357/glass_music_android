@@ -1,0 +1,46 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK platform + build-tools (compileSdk 36)
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+
+      # We don't commit the binary gradle-wrapper.jar; generate the wrapper in CI.
+      - name: Generate Gradle wrapper (8.14.3)
+        run: |
+          curl -sL https://services.gradle.org/distributions/gradle-8.14.3-bin.zip -o /tmp/gradle.zip
+          unzip -q /tmp/gradle.zip -d "$HOME/gradle"
+          "$HOME/gradle/gradle-8.14.3/bin/gradle" wrapper --gradle-version 8.14.3
+          chmod +x ./gradlew
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Music-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
